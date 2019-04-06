@@ -1,16 +1,19 @@
 package com.yanghx.rabbitmqspring;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import com.rabbitmq.client.Channel;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.support.ConsumerTagStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.UUID;
 
 /**
  * rabbitMQ配置类
@@ -40,7 +43,6 @@ public class RabbitMQConfig {
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         return new RabbitTemplate(connectionFactory);
     }
-
 
 
     @Bean
@@ -110,5 +112,46 @@ public class RabbitMQConfig {
     }
 
 
+    /**
+     * 简单消息监听容器
+     * 配置完成后。可以在管控台看到消息者信息。 以及消费者标签信息
+     *
+     * @param connectionFactory 链接工厂
+     * @return SimpleMessageListenerContainer
+     */
+    @Bean
+    public SimpleMessageListenerContainer messageContainer(ConnectionFactory connectionFactory) {
+        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer(connectionFactory);
+        //设置要监听的队列
+        simpleMessageListenerContainer.setQueues(queue001(), queue002(), queue003(), queue_image(), queue_pdf());
+        //初始化消费者数量
+        simpleMessageListenerContainer.setConcurrentConsumers(1);
+        //最大消费者数量
+        simpleMessageListenerContainer.setMaxConcurrentConsumers(5);
+        //设置是否重回队列[一般为false]
+        simpleMessageListenerContainer.setDefaultRequeueRejected(false);
+        //设置自动ack
+        simpleMessageListenerContainer.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        //设置channel 是否外露
+         simpleMessageListenerContainer.setExposeListenerChannel(true);
+        //设置消费端标签的策略
+        simpleMessageListenerContainer.setConsumerTagStrategy(new ConsumerTagStrategy() {
+            @Override
+            public String createConsumerTag(String queueName) {
+                return queueName + "_" + UUID.randomUUID().toString();
+            }
+        });
+        //设置消息监听 ChannelAwareMessageListener
+        simpleMessageListenerContainer.setMessageListener(new ChannelAwareMessageListener() {
+            @Override
+            public void onMessage(Message message, Channel channel) throws Exception {
+                String msg = new String(message.getBody());
+                System.out.println("----------消费者： " + msg);
+            }
+        });
 
+        return simpleMessageListenerContainer;
+
+
+    }
 }

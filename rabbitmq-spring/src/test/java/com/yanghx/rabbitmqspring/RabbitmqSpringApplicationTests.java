@@ -99,8 +99,6 @@ public class RabbitmqSpringApplicationTests {
         rabbitTemplate.convertAndSend("topic001", "spring.amqp", "hello object message send!");
 
         rabbitTemplate.convertAndSend("topic002", "rabbit.abc", "hello object message send!");
-
-
     }
 
 
