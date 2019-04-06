@@ -1,6 +1,8 @@
 package com.yanghx.rabbitmqspring;
 
 import com.rabbitmq.client.Channel;
+import com.yanghx.rabbitmqspring.adapter.MessageDelegate;
+import com.yanghx.rabbitmqspring.convert.TextMessageConverter;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -8,6 +10,7 @@ import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.ConsumerTagStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -133,7 +136,7 @@ public class RabbitMQConfig {
         //设置自动ack
         simpleMessageListenerContainer.setAcknowledgeMode(AcknowledgeMode.AUTO);
         //设置channel 是否外露
-         simpleMessageListenerContainer.setExposeListenerChannel(true);
+        simpleMessageListenerContainer.setExposeListenerChannel(true);
         //设置消费端标签的策略
         simpleMessageListenerContainer.setConsumerTagStrategy(new ConsumerTagStrategy() {
             @Override
@@ -141,7 +144,9 @@ public class RabbitMQConfig {
                 return queueName + "_" + UUID.randomUUID().toString();
             }
         });
-        //设置消息监听 ChannelAwareMessageListener
+
+        ///设置消息监听 ChannelAwareMessageListener
+        /*
         simpleMessageListenerContainer.setMessageListener(new ChannelAwareMessageListener() {
             @Override
             public void onMessage(Message message, Channel channel) throws Exception {
@@ -149,6 +154,19 @@ public class RabbitMQConfig {
                 System.out.println("----------消费者： " + msg);
             }
         });
+        */
+
+        ///消息监听适配器
+        /*
+         * 适配器方式。 默认是有自己的方法名字。 handleMessage
+         *  可以自己指定一个方法的名称。 consumerMessage
+         *  也可以添加一个转换器： 从字节数组转换为String
+         */
+        MessageListenerAdapter messageListenerAdapter = new MessageListenerAdapter(new MessageDelegate());
+        messageListenerAdapter.setDefaultListenerMethod("consumeMessage");
+        messageListenerAdapter.setMessageConverter(new TextMessageConverter());
+        simpleMessageListenerContainer.setMessageListener(messageListenerAdapter);
+
 
         return simpleMessageListenerContainer;
 

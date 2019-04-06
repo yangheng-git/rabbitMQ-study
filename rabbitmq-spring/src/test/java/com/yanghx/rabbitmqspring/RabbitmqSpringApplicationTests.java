@@ -101,5 +101,20 @@ public class RabbitmqSpringApplicationTests {
         rabbitTemplate.convertAndSend("topic002", "rabbit.abc", "hello object message send!");
     }
 
+    /**
+     * 发送消息。测试转换器和适配器
+     * <p>
+     * 转换器判断contentType 将字节数组转化为字符串
+     * 适配器将数据交给 MessageDelegate 的 consumeMessage 方法进行处理
+     */
+    @Test
+    public void testMessage4Text() {
+        MessageProperties messageProperties = new MessageProperties();
+        messageProperties.setContentType("text/plan");
+        Message message = new Message("mq 消息1234".getBytes(), messageProperties);
+        rabbitTemplate.send("topic001", "spring.abc", message);
+        rabbitTemplate.send("topic002", "rabbit.abc", message);
+    }
+
 
 }
