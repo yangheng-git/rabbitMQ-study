@@ -2,6 +2,9 @@ package com.yanghx.rabbitmqspringboot.entity;
 
 import java.io.Serializable;
 
+/**
+ * @author yangheng
+ */
 public class Order implements Serializable {
 
     private String id;
